@@ -1475,10 +1475,10 @@ function scoring() {
   const title = document.getElementById("midiTitle").textContent;
   const composer = document.getElementById("composer").textContent;
   const info = `${title} ${composer}`;
-  const text = encodeURIComponent(`Tip Tap Notes! ${info}: ${score}`);
-  const url = "https://marmooo.github.com/tip-tap-notes/";
+  const text = encodeURIComponent(`Doremi Piano! ${info}: ${score}`);
+  const url = "https://marmooo.github.com/doremi-piano/";
   const twitterUrl =
-    `https://twitter.com/intent/tweet?text=${text}&url=${url}&hashtags=TipTapNotes`;
+    `https://twitter.com/intent/tweet?text=${text}&url=${url}&hashtags=DoremiPiano`;
   document.getElementById("twitter").href = twitterUrl;
 }
 
