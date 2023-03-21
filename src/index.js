@@ -119,6 +119,7 @@ function convert(ns, query) {
     note.endTime += waitTime;
     const duration = note.endTime - note.startTime;
     if (longestDuration < duration) longestDuration = duration;
+    note.target = true;
   });
   ns.controlChanges.forEach((cc) => {
     cc.time += waitTime;
@@ -133,10 +134,6 @@ function convert(ns, query) {
     if (a.startTime < b.startTime) return -1;
     if (a.startTime > b.startTime) return 1;
     return 0;
-  });
-  // TODO
-  ns.notes.forEach((note) => {
-    note.target = true;
   });
   nsCache = core.sequences.clone(ns);
   setMIDIInfo(query);
@@ -1418,56 +1415,6 @@ function countKeyPressOff(pitch) {
       greatCount += 1;
     }
   }
-}
-
-function buttonEvent(state, x, svgHeight) {
-  tapCount += 1;
-  const waterfallWidth = visualizer.svg.getBoundingClientRect().width;
-  const scrollRatio = visualizer.parentElement.scrollLeft / waterfallWidth;
-  let stateText = "MISS";
-  const looseTime = 1;
-  const startTime = currentTime - longestDuration - looseTime;
-  const startPos = searchNotePosition(ns.notes, startTime);
-  const endTime = currentTime + looseTime;
-  const endPos = searchNotePosition(ns.notes, endTime) + 1;
-  [...visualizer.svg.children].slice(startPos, endPos)
-    .filter((rect) => x == parseInt(rect.getAttribute("x")))
-    .filter((rect) => !rect.classList.contains("d-none"))
-    .filter((rect) => !rect.classList.contains("fade"))
-    .forEach((rect) => {
-      const y = parseFloat(rect.getAttribute("y"));
-      const height = parseFloat(rect.getAttribute("height"));
-      const loosePixel = 2;
-      const minRatio = (y - loosePixel) / svgHeight;
-      const maxRatio = (y + height + loosePixel) / svgHeight;
-      const avgRatio = (minRatio + maxRatio) / 2;
-      if (avgRatio <= scrollRatio && scrollRatio <= maxRatio) {
-        stateText = "PERFECT";
-        rect.classList.add("fade");
-        perfectCount += 1;
-      } else if (minRatio <= scrollRatio && scrollRatio < avgRatio) {
-        stateText = "GREAT";
-        rect.classList.add("fade");
-        greatCount += 1;
-      }
-    });
-  switch (stateText) {
-    case "PERFECT":
-      state.textContent = stateText;
-      state.className = "badge bg-primary";
-      break;
-    case "GREAT":
-      state.textContent = stateText;
-      state.className = "badge bg-success";
-      break;
-    case "MISS":
-      state.className = "badge bg-danger";
-      break;
-  }
-  setTimeout(() => {
-    state.textContent = "MISS";
-    state.className = "badge";
-  }, 200);
 }
 
 function countNotes() {
