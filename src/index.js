@@ -202,7 +202,7 @@ function searchNotePosition(notes, time) {
       right = mid - 1;
     }
   }
-  return right + 1;
+  return right;
 }
 
 const MIN_NOTE_LENGTH = 1;
