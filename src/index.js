@@ -134,6 +134,10 @@ function convert(ns, query) {
     if (a.startTime > b.startTime) return 1;
     return 0;
   });
+  // TODO
+  ns.notes.forEach((note) => {
+    note.target = true;
+  });
   nsCache = core.sequences.clone(ns);
   setMIDIInfo(query);
   setToolbar();
@@ -179,19 +183,18 @@ function calcPixelsPerTimeStep() {
   return noteWidth / averageTime;
 }
 
-function searchNotePosition(notes, time, recursive) {
+function searchNotePosition(notes, time) {
   let left = 0;
   let right = notes.length - 1;
-  let mid;
   if (time < notes[0].startTime) return -1;
   while (left <= right) {
-    mid = Math.floor((left + right) / 2);
+    const mid = Math.floor((left + right) / 2);
     if (notes[mid].startTime === time) {
       const t = notes[mid].startTime - 1e-8;
       if (t < notes[0].startTime) {
         return 0;
       } else {
-        return searchNotePosition(notes, t, true);
+        return searchNotePosition(notes, t);
       }
     } else if (notes[mid].startTime < time) {
       left = mid + 1;
@@ -199,11 +202,7 @@ function searchNotePosition(notes, time, recursive) {
       right = mid - 1;
     }
   }
-  if (recursive) {
-    return right + 1;
-  } else {
-    return searchNotePosition(notes, notes[right].startTime, true);
-  }
+  return right + 1;
 }
 
 const MIN_NOTE_LENGTH = 1;
@@ -893,12 +892,14 @@ async function initPianoEvent(name) {
       const velocity = Math.ceil(pressure * 127);
       synthesizer.synth.midiNoteOn(0, pitch, velocity);
 
+      countKeyPressOn(pitch);
       rects[1].setAttribute("height", height * 0.975);
     }
     function noteOff() {
       synthesizer.resumeContext();
       synthesizer.synth.midiNoteOff(0, pitch, 127);
 
+      countKeyPressOff(pitch);
       const className = rects[0].getAttribute("class");
       if (className == "white") {
         rects[1].setAttribute("height", height * 0.95);
@@ -1383,6 +1384,42 @@ function typeEvent(event) {
   }
 }
 
+function countKeyPressOn(pitch) {
+  const t = currentTime;
+  const startTime = t - longestDuration;
+  const startPos = searchNotePosition(ns.notes, startTime);
+  const endPos = searchNotePosition(ns.notes, t) + 1;
+  const index = ns.notes.slice(startPos, endPos).findLastIndex((note) => {
+    if (note.target && note.pitch == pitch) return true;
+  });
+  if (index > 0) {
+    const note = ns.notes[startPos + index];
+    note.pressed = t;
+    tapCount += 1;
+  }
+}
+
+function countKeyPressOff(pitch) {
+  const t = currentTime;
+  const startTime = t - longestDuration;
+  const startPos = searchNotePosition(ns.notes, startTime);
+  const endPos = searchNotePosition(ns.notes, t) + 1;
+  const index = ns.notes.slice(startPos, endPos)
+    .findLastIndex((note) => {
+      if (note.target && note.pitch == pitch) return true;
+    });
+  if (index > 0) {
+    const note = ns.notes[startPos + index];
+    const rate = (t - note.pressed) / (note.endTime - note.startTime);
+    note.pressed = false;
+    if (rate > 0.5) {
+      perfectCount += 1;
+    } else {
+      greatCount += 1;
+    }
+  }
+}
+
 function buttonEvent(state, x, svgHeight) {
   tapCount += 1;
   const waterfallWidth = visualizer.svg.getBoundingClientRect().width;
@@ -1431,17 +1468,6 @@ function buttonEvent(state, x, svgHeight) {
     state.textContent = "MISS";
     state.className = "badge";
   }, 200);
-}
-
-function setButtonEvent(button, state, x, svgHeight) {
-  const ev = () => {
-    buttonEvent(state, x, svgHeight);
-  };
-  if ("ontouchstart" in window) {
-    button.ontouchstart = ev;
-  } else {
-    button.onmousedown = ev;
-  }
 }
 
 function countNotes() {
