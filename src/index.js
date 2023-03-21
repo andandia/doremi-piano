@@ -309,7 +309,7 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
     if (!activeNote) return;
     this.clearActivePianoKeys();
     const notes = visualizer.noteSequence.notes;
-    const rects = [...visualizer.svg.children];
+    const rects = visualizer.svg.children;
     const keys = [...visualizer.svgPiano.children].slice(1);
     const startTime = activeNote.startTime;
     if (!startPos) startPos = searchNotePosition(notes, startTime);
@@ -876,7 +876,7 @@ async function initPianoEvent(name) {
   synthesizer = new SoundFontPlayer(stopCallback);
   await loadSoundFont(synthesizer, name);
   [...visualizer.svgPiano.children].forEach((g) => {
-    const rects = [...g.children];
+    const rects = g.children;
     const pitch = parseInt(rects[1].getAttribute("data-pitch"));
     const height = parseInt(rects[0].getAttribute("height"));
     function noteOn(event) {
@@ -1079,64 +1079,64 @@ function setInstrumentsCheckbox() {
   ns.notes.forEach((note) => {
     set.add(note.instrument);
   });
-  instrumentStates = new Map();
   let str = "";
-  set.forEach((instrumentId) => {
-    str += getCheckboxString("instrument", instrumentId);
-    instrumentStates.set(instrumentId, true);
+  set.forEach((instrument) => {
+    str += getCheckboxString("instrument", instrument);
   });
   const doc = new DOMParser().parseFromString(str, "text/html");
   const node = document.getElementById("filterInstruments");
   node.replaceChildren(...doc.body.children);
   [...node.querySelectorAll("input")].forEach((input) => {
-    input.addEventListener("change", () => {
-      tapCount = perfectCount = greatCount = 0;
-      const instrumentId = input.value;
-      [...visualizer.svg.children].forEach((rect) => {
-        if (rect.dataset.instrument == instrumentId) {
-          rect.classList.toggle("d-none");
-        }
-      });
-      const instrument = parseInt(instrumentId);
-      const currState = instrumentStates.get(instrument);
-      instrumentStates.set(parseInt(instrument), !currState);
-      if (visualizer && ns) {
-        changeVisualizerPositions(visualizer);
+    input.addEventListener("change", changeInstrumentsCheckbox);
+  });
+}
+
+function changeInstrumentsCheckbox(event) {
+  const checked = event.target.checked;
+  const instrument = parseInt(event.target.value);
+  const rects = visualizer.svg.children;
+  ns.notes.forEach((note, i) => {
+    if (note.instrument == instrument) {
+      if (checked) {
+        note.target = true;
+        rects[i].classList.remove("d-none");
+      } else {
+        note.target = false;
+        rects[i].classList.add("d-none");
       }
-    });
+    }
   });
 }
 
 function setProgramsCheckbox() {
   const set = new Set();
-  ns.notes.forEach((note) => {
-    set.add(note.program);
-  });
-  programStates = new Map();
+  ns.notes.forEach((note) => set.add(note.program));
   let str = "";
-  set.forEach((programId) => {
-    str += getCheckboxString("program", programId);
-    programStates.set(programId, true);
+  set.forEach((program) => {
+    str += getCheckboxString("program", program);
   });
   const doc = new DOMParser().parseFromString(str, "text/html");
   const node = document.getElementById("filterPrograms");
   node.replaceChildren(...doc.body.children);
   [...node.querySelectorAll("input")].forEach((input) => {
-    input.addEventListener("change", () => {
-      tapCount = perfectCount = greatCount = 0;
-      const programId = input.value;
-      [...visualizer.svg.children].forEach((rect) => {
-        if (rect.dataset.program == programId) {
-          rect.classList.toggle("d-none");
-        }
-      });
-      const program = parseInt(programId);
-      const currState = programStates.get(program);
-      programStates.set(parseInt(program), !currState);
-      if (visualizer && ns) {
-        changeVisualizerPositions(visualizer);
+    input.addEventListener("change", changeProgramsCheckbox);
+  });
+}
+
+function changeProgramsCheckbox(event) {
+  const checked = event.target.checked;
+  const program = parseInt(event.target.value);
+  const rects = visualizer.svg.children;
+  ns.notes.forEach((note, i) => {
+    if (note.program == program) {
+      if (checked) {
+        note.target = true;
+        rects[i].classList.remove("d-none");
+      } else {
+        note.target = false;
+        rects[i].classList.add("d-none");
       }
-    });
+    }
   });
 }
 
@@ -1335,36 +1335,6 @@ function seekScroll(time) {
   visualizer.parentElement.scrollTop = currentScrollHeight * rate;
 }
 
-function changeVisualizerPositions(visualizer) {
-  let px = Infinity;
-  let count = 0;
-  [...visualizer.svg.children].forEach((g) => {
-    const rect = g.querySelector("rect");
-    const text = g.querySelector("text");
-
-    const instrument = parseInt(rect.dataset.instrument);
-    const program = parseInt(rect.dataset.program);
-    if (programStates.get(program) && instrumentStates.get(instrument)) {
-      g.classList.remove("d-none");
-    } else {
-      g.classList.add("d-none");
-    }
-
-    const x = rect.getAttribute("x");
-    if (px == x) {
-      const y = count * noteHeight;
-      rect.setAttribute("y", y);
-      text.setAttribute("y", y + noteFontSize);
-      count += 1;
-    } else {
-      rect.setAttribute("y", 0);
-      text.setAttribute("y", noteFontSize);
-      count = 1;
-    }
-    px = x;
-  });
-}
-
 function typeEvent(event) {
   if (!player || !player.synth) return;
   if (controllerDisabled) return;
@@ -1418,9 +1388,7 @@ function countKeyPressOff(pitch) {
 }
 
 function countNotes() {
-  return ns.notes
-    .filter((note) => instrumentStates.get(note.instrument))
-    .filter((note) => programStates.get(note.program)).length;
+  return ns.notes.filter((note) => note.target).length;
 }
 
 function getAccuracy() {
