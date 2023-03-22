@@ -1353,29 +1353,39 @@ function typeEvent(event) {
 
 function countKeyPressOn(pitch) {
   const t = currentTime;
+  const looseTime = 0.1;
   const startTime = t - longestDuration;
-  const startPos = searchNotePosition(ns.notes, startTime);
-  const endPos = searchNotePosition(ns.notes, t) + 1;
-  const index = ns.notes.slice(startPos, endPos).findLastIndex((note) => {
-    if (note.target && note.pitch == pitch) return true;
-  });
-  if (index > 0) {
-    const note = ns.notes[startPos + index];
-    note.pressed = t;
-    tapCount += 1;
-  }
+  const endTime = t + looseTime;
+  let startPos = searchNotePosition(ns.notes, startTime);
+  if (startPos < 0) startPos = 0;
+  const endPos = searchNotePosition(ns.notes, endTime);
+  if (endPos < 0) return;
+  ns.notes.slice(startPos, endPos + 1)
+    .filter((note) => {
+      if (!note.target) return false;
+      if (note.pitch != pitch) return false;
+      return true;
+    }).slice(-1).forEach((note) => {
+      note.pressed = t;
+      tapCount += 1;
+    });
 }
 
 function countKeyPressOff(pitch) {
   const t = currentTime;
   const startTime = t - longestDuration;
-  const startPos = searchNotePosition(ns.notes, startTime);
-  const endPos = searchNotePosition(ns.notes, t) + 1;
-  const index = ns.notes.slice(startPos, endPos)
-    .findLastIndex((note) => {
-      if (note.target && note.pitch == pitch) return true;
-    });
-  if (index > 0) {
+  let startPos = searchNotePosition(ns.notes, startTime);
+  if (startPos < 0) startPos = 0;
+  const endPos = searchNotePosition(ns.notes, t);
+  const indexes = [];
+  for (let i = startPos; i <= endPos; i++) {
+    const note = ns.notes[i];
+    if (!note.target) continue;
+    if (note.pitch != pitch) continue;
+    if (!note.pressed) continue;
+    indexes.push(i);
+  }
+  indexes.forEach((index) => {
     const note = ns.notes[startPos + index];
     const rate = (t - note.pressed) / (note.endTime - note.startTime);
     note.pressed = false;
@@ -1384,7 +1394,7 @@ function countKeyPressOff(pitch) {
     } else {
       greatCount += 1;
     }
-  }
+  });
 }
 
 function countNotes() {
@@ -1443,6 +1453,9 @@ let timer;
 let player;
 let visualizer;
 let synthesizer;
+let tapCount = 0;
+let perfectCount = 0;
+let greatCount = 0;
 let firstRun = true;
 let mouseDowned = false;
 loadConfig();
