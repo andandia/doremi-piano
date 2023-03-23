@@ -902,7 +902,7 @@ async function initPianoEvent(name) {
     }
     function noteOff() {
       synthesizer.resumeContext();
-      synthesizer.synth.midiNoteOff(0, pitch, 127);
+      synthesizer.synth.midiNoteOff(0, pitch);
 
       countKeyPressOff(pitch);
       const className = rects[0].getAttribute("class");
@@ -1163,6 +1163,7 @@ function setProgramsRadiobox() {
 
 function changeProgramsRadiobox(event) {
   const program = parseInt(event.target.value);
+  synthesizer.synth.midiProgramChange(0, program);
   const rects = visualizer.svg.children;
   ns.notes.forEach((note, i) => {
     if (note.program == program) {
