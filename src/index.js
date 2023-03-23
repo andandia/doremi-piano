@@ -119,7 +119,6 @@ function convert(ns, query) {
     note.endTime += waitTime;
     const duration = note.endTime - note.startTime;
     if (longestDuration < duration) longestDuration = duration;
-    note.target = true;
   });
   ns.controlChanges.forEach((cc) => {
     cc.time += waitTime;
@@ -136,9 +135,12 @@ function convert(ns, query) {
     return 0;
   });
   nsCache = core.sequences.clone(ns);
+  ns.notes.forEach((note) => {
+    note.velocity = 1;
+  });
   setMIDIInfo(query);
-  setToolbar();
   initVisualizer();
+  setProgramsRadiobox();
   initPlayer();
 }
 
@@ -626,11 +628,17 @@ function initVisualizer() {
   initPianoKeyIndex();
   styleToViewBox(visualizer.svg);
   styleToViewBox(visualizer.svgPiano);
+
+  [...visualizer.svg.children].forEach((rect) => {
+    rect.setAttribute("fill", "rgba(0, 127, 255, 1)");
+  });
+
   const whiteCount = [...visualizer.svgPiano.children]
     .filter((rect) => rect.getAttribute("class") == "white").length;
   playPanel.style.width = whiteCount / 14 * 100 + "%";
   beautifyPiano(visualizer.svgPiano);
   visualizer.svgPiano.style.touchAction = "pan-x";
+
   const parentElement = visualizer.parentElement;
   parentElement.style.width = "100%";
   parentElement.style.height = "40vh";
@@ -1064,6 +1072,16 @@ function clearPlayer() {
   document.getElementById("pause").classList.add("d-none");
 }
 
+function getRadioboxString(name, label) {
+  return `
+<div class="form-check form-check-inline">
+  <label class="form-check-label">
+    <input class="form-check-input" name="${name}" value="${label}" type="radio">
+    ${label}
+  </label>
+</div>`;
+}
+
 function getCheckboxString(name, label) {
   return `
 <div class="form-check form-check-inline">
@@ -1074,13 +1092,13 @@ function getCheckboxString(name, label) {
 </div>`;
 }
 
-function setInstrumentsCheckbox() {
+function setInstrumentsCheckbox(program) {
   const set = new Set();
   ns.notes.forEach((note) => {
-    set.add(note.instrument);
+    if (note.program == program) set.add(note.instrument);
   });
   let str = "";
-  set.forEach((instrument) => {
+  [...set].sort().forEach((instrument) => {
     str += getCheckboxString("instrument", instrument);
   });
   const doc = new DOMParser().parseFromString(str, "text/html");
@@ -1091,7 +1109,7 @@ function setInstrumentsCheckbox() {
   });
 }
 
-function changeInstrumentsCheckbox(event) {
+async function changeInstrumentsCheckbox(event) {
   const checked = event.target.checked;
   const instrument = parseInt(event.target.value);
   const rects = visualizer.svg.children;
@@ -1099,50 +1117,65 @@ function changeInstrumentsCheckbox(event) {
     if (note.instrument == instrument) {
       if (checked) {
         note.target = true;
-        rects[i].classList.remove("d-none");
+        note.velocity = 1;
+        rects[i].setAttribute("opacity", 1);
       } else {
         note.target = false;
-        rects[i].classList.add("d-none");
+        note.velocity = nsCache.notes[i].velocity;
+        rects[i].setAttribute("opacity", 0.1);
       }
     }
   });
+  const seconds = currentTime;
+  const playState = player.getPlayState();
+  player.stop();
+  clearInterval(timer);
+  if (playState == "started") {
+    setLoadingTimer(seconds);
+    player.start(ns);
+  } else if (player instanceof SoundFontPlayer) {
+    await player.loadNoteSequence(ns);
+    player.seekTo(seconds);
+  }
 }
 
-function setProgramsCheckbox() {
+function setProgramsRadiobox() {
   const set = new Set();
   ns.notes.forEach((note) => set.add(note.program));
   let str = "";
-  set.forEach((program) => {
-    str += getCheckboxString("program", program);
+  [...set].sort().forEach((program) => {
+    str += getRadioboxString("program", program);
   });
   const doc = new DOMParser().parseFromString(str, "text/html");
   const node = document.getElementById("filterPrograms");
   node.replaceChildren(...doc.body.children);
-  [...node.querySelectorAll("input")].forEach((input) => {
-    input.addEventListener("change", changeProgramsCheckbox);
+  let checked;
+  [...node.querySelectorAll("input")].forEach((input, i) => {
+    input.addEventListener("change", changeProgramsRadiobox);
+    if (i == 0) {
+      checked = parseInt(input.value);
+      input.checked = true;
+      input.dispatchEvent(new Event("change"));
+    }
   });
+  return checked;
 }
 
-function changeProgramsCheckbox(event) {
-  const checked = event.target.checked;
+function changeProgramsRadiobox(event) {
   const program = parseInt(event.target.value);
   const rects = visualizer.svg.children;
   ns.notes.forEach((note, i) => {
     if (note.program == program) {
-      if (checked) {
-        note.target = true;
-        rects[i].classList.remove("d-none");
-      } else {
-        note.target = false;
-        rects[i].classList.add("d-none");
-      }
+      note.target = true;
+      note.velocity = 1;
+      rects[i].setAttribute("opacity", 1);
+    } else {
+      note.target = false;
+      note.velocity = nsCache.notes[i].velocity;
+      rects[i].setAttribute("opacity", 0.1);
     }
   });
-}
-
-function setToolbar() {
-  setProgramsCheckbox();
-  setInstrumentsCheckbox();
+  setInstrumentsCheckbox(program);
 }
 
 function speedDown() {
