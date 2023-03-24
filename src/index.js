@@ -1104,7 +1104,7 @@ function setInstrumentsCheckbox(program) {
     if (note.program == program) set.add(note.instrument);
   });
   let str = "";
-  [...set].sort().forEach((instrument) => {
+  [...set].sort((a, b) => a - b).forEach((instrument) => {
     str += getCheckboxString("instrument", instrument);
   });
   const doc = new DOMParser().parseFromString(str, "text/html");
