@@ -1034,8 +1034,13 @@ function enableController() {
 }
 
 function unlockAudio() {
+  if (!player) return;
+  if (!player.synth) return;
+  if (!synthesizer) return;
+  if (!synthesizer.synth) return;
   player.resumeContext();
   synthesizer.resumeContext();
+  document.removeEventListener("click", unlockAudio);
 }
 
 function play() {
@@ -1540,7 +1545,4 @@ window.addEventListener("mouseup", () => {
 window.addEventListener("mousedown", () => {
   mouseDowned = true;
 });
-document.addEventListener("click", unlockAudio, {
-  once: true,
-  useCapture: true,
-});
+document.addEventListener("click", unlockAudio);
