@@ -883,6 +883,7 @@ function stopCallback() {
 async function initPianoEvent(name) {
   synthesizer = new SoundFontPlayer(stopCallback);
   await loadSoundFont(synthesizer, name);
+  initSynthesizerProgram();
   [...visualizer.svgPiano.children].forEach((g) => {
     const rects = g.children;
     const pitch = parseInt(rects[1].getAttribute("data-pitch"));
@@ -1139,6 +1140,12 @@ async function changeInstrumentsCheckbox(event) {
   }
 }
 
+function initSynthesizerProgram() {
+  const node = document.getElementById("filterPrograms");
+  const program = parseInt(node.querySelector("input").value);
+  synthesizer.synth.midiProgramChange(0, program);
+}
+
 function setProgramsRadiobox() {
   const set = new Set();
   ns.notes.forEach((note) => set.add(note.program));
@@ -1149,21 +1156,20 @@ function setProgramsRadiobox() {
   const doc = new DOMParser().parseFromString(str, "text/html");
   const node = document.getElementById("filterPrograms");
   node.replaceChildren(...doc.body.children);
-  let checked;
   [...node.querySelectorAll("input")].forEach((input, i) => {
     input.addEventListener("change", changeProgramsRadiobox);
     if (i == 0) {
-      checked = parseInt(input.value);
       input.checked = true;
       input.dispatchEvent(new Event("change"));
     }
   });
-  return checked;
 }
 
 function changeProgramsRadiobox(event) {
   const program = parseInt(event.target.value);
-  synthesizer.synth.midiProgramChange(0, program);
+  if (synthesizer && synthesizer.synth) {
+    synthesizer.synth.midiProgramChange(0, program);
+  }
   const rects = visualizer.svg.children;
   ns.notes.forEach((note, i) => {
     if (note.program == program) {
