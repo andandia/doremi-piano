@@ -508,9 +508,19 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
     return rect;
   }
 
+  unfillActiveRect(svg) {
+    const els = svg.querySelectorAll("rect.active");
+    for (let i = 0; i < els.length; ++i) {
+      const el = els[i];
+      const fill = this.getNoteFillColor(nsCache.notes[i], false);
+      el.setAttribute("fill", fill);
+      el.classList.remove("active");
+    }
+  }
   clearActiveNotes() {
-    super.unfillActiveRect(this.svg);
+    this.unfillActiveRect(this.svg);
     this.clearActivePianoKeys();
+    initRectsColor();
   }
 
   clearActivePianoKeys() {
@@ -1112,6 +1122,35 @@ function setInstrumentsCheckbox(program) {
   node.replaceChildren(...doc.body.children);
   [...node.querySelectorAll("input")].forEach((input) => {
     input.addEventListener("change", changeInstrumentsCheckbox);
+  });
+}
+
+function initRectsColor() {
+  const program = parseInt(
+    document.forms.filterPrograms.elements.program.value,
+  );
+  const inputs = document.getElementById("filterInstruments").querySelectorAll(
+    "input",
+  );
+  const states = new Map();
+  [...inputs].forEach((input) => {
+    states.set(parseInt(input.value), input.checked);
+  });
+  const rects = visualizer.svg.children;
+  ns.notes.forEach((note, i) => {
+    if (note.program != program) {
+      note.target = false;
+      note.velocity = nsCache.notes[i].velocity;
+      rects[i].setAttribute("opacity", 0.1);
+    } else if (states.get(note.instrument)) {
+      note.target = true;
+      note.velocity = 1;
+      rects[i].setAttribute("opacity", 1);
+    } else {
+      note.target = false;
+      note.velocity = nsCache.notes[i].velocity;
+      rects[i].setAttribute("opacity", 0.1);
+    }
   });
 }
 
