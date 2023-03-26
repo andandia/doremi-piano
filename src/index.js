@@ -22,20 +22,19 @@ function getRandomInt(min, max) {
 
 function getRectColor() {
   if (colorful) {
-    const r = getRandomInt(96, 223);
-    const g = getRandomInt(96, 223);
-    const b = getRandomInt(96, 223);
-    return `rgba(${r}, ${g}, ${b}, 0.5)`;
+    const r = getRandomInt(0, 127);
+    const g = getRandomInt(0, 127);
+    const b = getRandomInt(0, 127);
+    return `${r}, ${g}, ${b}`;
   } else {
-    return "rgba(0, 0, 0, 0.3)";
+    return "0, 127, 255";
   }
 }
 
 function setRectColor() {
-  [...visualizer.svg.children].forEach((g) => {
+  [...visualizer.svg.children].forEach((rect) => {
     const color = getRectColor();
-    const rect = g.querySelector("rect");
-    rect.setAttribute("fill", color);
+    rect.setAttribute("fill", `rgba(${color}, 1)`);
   });
 }
 
@@ -508,6 +507,15 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
     return rect;
   }
 
+  getNoteFillColor(note, isActive) {
+    const opacityBaseline = 0.2; // Shift all the opacities up a little.
+    const opacity = note.velocity ? note.velocity / 100 + opacityBaseline : 1;
+    // const rgb = (isActive) ? this.config.activeNoteRGB : this.config.noteRGB;
+    const rgb = (isActive) ? this.config.activeNoteRGB : getRectColor();
+    const fill = `rgba(${rgb}, ${opacity})`;
+    return fill;
+  }
+
   unfillActiveRect(svg) {
     const els = svg.querySelectorAll("rect.active");
     for (let i = 0; i < els.length; ++i) {
@@ -520,7 +528,7 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
   clearActiveNotes() {
     this.unfillActiveRect(this.svg);
     this.clearActivePianoKeys();
-    initRectsColor();
+    setRectOpacity();
   }
 
   clearActivePianoKeys() {
@@ -634,14 +642,11 @@ function initVisualizer() {
     minPitch: minPitch,
     noteRGB: "0, 127, 255",
   };
-  visualizer = new WaterfallSVGVisualizer(ns, playPanel, config);
+  visualizer = new WaterfallSVGVisualizer(nsCache, playPanel, config);
   initPianoKeyIndex();
   styleToViewBox(visualizer.svg);
   styleToViewBox(visualizer.svgPiano);
-
-  [...visualizer.svg.children].forEach((rect) => {
-    rect.setAttribute("fill", "rgba(0, 127, 255, 1)");
-  });
+  setRectColor();
 
   const whiteCount = [...visualizer.svgPiano.children]
     .filter((rect) => rect.getAttribute("class") == "white").length;
@@ -962,7 +967,6 @@ async function initPlayer() {
   enableController();
 }
 
-
 function getPrograms(ns) {
   const programs = new Set();
   ns.notes.forEach((note) => programs.add(note.program));
@@ -1131,13 +1135,12 @@ function setInstrumentsCheckbox(program) {
   });
 }
 
-function initRectsColor() {
+function setRectOpacity() {
   const program = parseInt(
     document.forms.filterPrograms.elements.program.value,
   );
-  const inputs = document.getElementById("filterInstruments").querySelectorAll(
-    "input",
-  );
+  const inputs = document.getElementById("filterInstruments")
+    .querySelectorAll("input");
   const states = new Map();
   [...inputs].forEach((input) => {
     states.set(parseInt(input.value), input.checked);
@@ -1559,6 +1562,7 @@ async function loadInstrumentList() {
 
 const pianoKeyIndex = new Map();
 let controllerDisabled;
+let colorful = true;
 let currentTime = 0;
 let currentPos = 0;
 let currentScrollHeight;
