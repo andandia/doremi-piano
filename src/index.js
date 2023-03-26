@@ -719,11 +719,8 @@ class SoundFontPlayer {
     this.totalTicks = 0;
   }
 
-  async loadSoundFontDir(ns, dir) {
-    const programs = new Set();
-    ns.notes.forEach((note) => programs.add(note.program));
-    if (ns.notes.some((note) => note.isDrum)) programs.add(128);
-    const promises = [...programs].map((program) => {
+  async loadSoundFontDir(programs, dir) {
+    const promises = programs.map((program) => {
       const programId = program.toString().padStart(3, "0");
       const url = `${dir}/${programId}.sf3`;
       if (this.cacheUrls[program] == url) return true;
@@ -965,7 +962,15 @@ async function initPlayer() {
   enableController();
 }
 
-async function loadSoundFont(player, name) {
+
+function getPrograms(ns) {
+  const programs = new Set();
+  ns.notes.forEach((note) => programs.add(note.program));
+  if (ns.notes.some((note) => note.isDrum)) programs.add(128);
+  return [...programs];
+}
+
+async function loadSoundFont(player, name, programs) {
   if (!name) {
     const soundfonts = document.getElementById("soundfonts");
     const index = soundfonts.selectedIndex;
@@ -973,7 +978,8 @@ async function loadSoundFont(player, name) {
     name = soundfonts.options[index].value;
   }
   const soundFontDir = `https://soundfonts.pages.dev/${name}`;
-  await player.loadSoundFontDir(ns, soundFontDir);
+  if (!programs) programs = getPrograms(ns);
+  await player.loadSoundFontDir(programs, soundFontDir);
 }
 
 function checkNoteEvent() {
@@ -1526,6 +1532,31 @@ function initQuery() {
   return query;
 }
 
+function changeInstrument(event) {
+  if (!synthesizer) return;
+  if (!synthesizer.synth) return;
+  const instrument = event.target.selectedIndex - 1;
+  if (instrument < 0) {
+    const node = document.getElementById("filterPrograms");
+    const program = parseInt(node.querySelector("input").value);
+    synthesizer.synth.midiProgramChange(0, program);
+  } else {
+    loadSoundFont(synthesizer, undefined, [instrument]);
+    synthesizer.synth.midiProgramChange(0, instrument);
+  }
+}
+
+async function loadInstrumentList() {
+  const response = await fetch(`instruments.lst`);
+  const text = await response.text();
+  const instruments = document.getElementById("instruments");
+  text.trimEnd().split("\n").forEach((line) => {
+    const option = document.createElement("option");
+    option.textContent = line;
+    instruments.appendChild(option);
+  });
+}
+
 const pianoKeyIndex = new Map();
 let controllerDisabled;
 let currentTime = 0;
@@ -1550,6 +1581,7 @@ if (location.search) {
   loadMIDIFromUrl("abt.mid", query);
 }
 loadSoundFontList();
+loadInstrumentList();
 
 const scoreModal = new bootstrap.Modal("#scorePanel", {
   backdrop: "static",
@@ -1576,6 +1608,7 @@ document.getElementById("inputMIDIUrl").onchange = loadMIDIUrlEvent;
 document.getElementById("inputSoundFontFile").onchange = loadSoundFontFileEvent;
 document.getElementById("inputSoundFontUrl").onchange = loadSoundFontUrlEvent;
 document.getElementById("soundfonts").onchange = changeConfig;
+document.getElementById("instruments").onchange = changeInstrument;
 document.addEventListener("keydown", typeEvent);
 window.addEventListener("resize", resize);
 window.addEventListener("mouseup", () => {
