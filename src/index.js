@@ -1452,16 +1452,21 @@ function countKeyPressOn(pitch) {
   let startPos = searchNotePosition(ns.notes, startTime);
   if (startPos < 0) startPos = 0;
   const endPos = searchNotePosition(ns.notes, endTime);
-  if (endPos < 0) return;
-  ns.notes.slice(startPos, endPos + 1)
+  const matched = ns.notes
+    .slice(startPos, endPos + 1)
     .filter((note) => {
       if (!note.target) return false;
       if (note.pitch != pitch) return false;
       return true;
-    }).slice(-1).forEach((note) => {
+    });
+  if (matched.length > 0) {
+    matched.slice(-1).forEach((note) => {
       note.pressed = t;
       tapCount += 1;
     });
+  } else {
+    tapCount += 1;
+  }
 }
 
 function countKeyPressOff(pitch) {
@@ -1479,7 +1484,7 @@ function countKeyPressOff(pitch) {
     indexes.push(i);
   }
   indexes.forEach((index) => {
-    const note = ns.notes[startPos + index];
+    const note = ns.notes[index];
     const rate = (t - note.pressed) / (note.endTime - note.startTime);
     note.pressed = false;
     if (rate > 0.5) {
@@ -1490,22 +1495,17 @@ function countKeyPressOff(pitch) {
   });
 }
 
-function countNotes() {
-  return ns.notes.filter((note) => note.target).length;
-}
-
 function getAccuracy() {
   if (tapCount == 0) return 0;
   return (perfectCount + greatCount) / tapCount;
 }
 
 function scoring() {
-  const totalCount = countNotes();
   const accuracy = getAccuracy();
-  const missCount = totalCount - perfectCount - greatCount;
-  const perfectRate = Math.ceil(perfectCount / totalCount * 10000) / 100;
-  const greatRate = Math.ceil(greatCount / totalCount * 10000) / 100;
-  const missRate = Math.ceil(missCount / totalCount * 10000) / 100;
+  const missCount = tapCount - perfectCount - greatCount;
+  const perfectRate = Math.ceil(perfectCount / tapCount * 10000) / 100;
+  const greatRate = Math.ceil(greatCount / tapCount * 10000) / 100;
+  const missRate = Math.ceil(missCount / tapCount * 10000) / 100;
   const tapped = perfectCount * 2 + greatCount;
   const speed = parseInt(document.getElementById("speed").value);
   const score = parseInt(tapped * speed * accuracy);
