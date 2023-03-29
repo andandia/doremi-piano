@@ -973,9 +973,11 @@ async function initPianoEvent(name) {
       g.addEventListener("touchend", (event) => {
         const touches = event.changedTouches;
         for (let i = 0; i < touches.length; i++) {
-          const target = touchCache.get(touches[i].identifier);
+          const id = touches[i].identifier;
+          const target = touchCache.get(id);
           if (target) {
             noteOffByElement(target);
+            touchCache.delete(id);
           } else {
             noteOff();
           }
