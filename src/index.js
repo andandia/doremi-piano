@@ -652,7 +652,7 @@ function initVisualizer() {
     .filter((rect) => rect.getAttribute("class") == "white").length;
   playPanel.style.width = whiteCount / 14 * 100 + "%";
   beautifyPiano(visualizer.svgPiano);
-  visualizer.svgPiano.style.touchAction = "pan-x";
+  visualizer.svgPiano.style.touchAction = "none";
 
   const parentElement = visualizer.parentElement;
   parentElement.style.width = "100%";
@@ -892,14 +892,44 @@ function stopCallback() {
   visualizer.clearActiveNotes();
 }
 
+function noteOffByElement(g) {
+  const rects = g.children;
+  const pitch = parseInt(rects[1].getAttribute("data-pitch"));
+  const height = parseInt(rects[0].getAttribute("height"));
+
+  synthesizer.resumeContext();
+  synthesizer.synth.midiNoteOff(0, pitch);
+
+  countKeyPressOff(pitch);
+  const className = rects[0].getAttribute("class");
+  if (className == "white") {
+    rects[1].setAttribute("height", height * 0.95);
+  } else {
+    rects[1].setAttribute("height", height * 0.85);
+  }
+}
+
 async function initPianoEvent(name) {
   synthesizer = new SoundFontPlayer(stopCallback);
   await loadSoundFont(synthesizer, name);
   initSynthesizerProgram();
-  [...visualizer.svgPiano.children].forEach((g) => {
+  const gs = [...visualizer.svgPiano.children];
+  gs.forEach((g) => {
     const rects = g.children;
     const pitch = parseInt(rects[1].getAttribute("data-pitch"));
     const height = parseInt(rects[0].getAttribute("height"));
+    function noteOff() {
+      synthesizer.resumeContext();
+      synthesizer.synth.midiNoteOff(0, pitch);
+
+      countKeyPressOff(pitch);
+      const className = rects[0].getAttribute("class");
+      if (className == "white") {
+        rects[1].setAttribute("height", height * 0.95);
+      } else {
+        rects[1].setAttribute("height", height * 0.85);
+      }
+    }
     function noteOn(event) {
       synthesizer.resumeContext();
       const pressure = event.pressure !== undefined
@@ -913,21 +943,44 @@ async function initPianoEvent(name) {
       countKeyPressOn(pitch);
       rects[1].setAttribute("height", height * 0.975);
     }
-    function noteOff() {
-      synthesizer.resumeContext();
-      synthesizer.synth.midiNoteOff(0, pitch);
-
-      countKeyPressOff(pitch);
-      const className = rects[0].getAttribute("class");
-      if (className == "white") {
-        rects[1].setAttribute("height", height * 0.95);
-      } else {
-        rects[1].setAttribute("height", height * 0.85);
-      }
-    }
     if ("ontouchstart" in window) {
+      const touchCache = new Map();
+      g.addEventListener("touchmove", (event) => {
+        const touches = event.changedTouches;
+        for (let i = 0; i < touches.length; i++) {
+          const touch = touches[i];
+          const x = touch.clientX;
+          const y = touch.clientY;
+          const targetRect = document.elementsFromPoint(x, y)
+            .find((e) => e.tagName == "rect");
+          const prevTarget = touchCache.get(touch.identifier);
+          if (targetRect) {
+            const target = targetRect.parentNode;
+            if (prevTarget != target) {
+              touchCache.set(touch.identifier, target);
+              if (prevTarget) {
+                noteOffByElement(prevTarget);
+                target.dispatchEvent(new Event("touchstart"));
+              }
+            }
+          } else if (prevTarget) {
+            touchCache.delete(touch.identifier);
+            noteOffByElement(prevTarget);
+          }
+        }
+      });
       g.addEventListener("touchstart", noteOn);
-      g.addEventListener("touchend", noteOff);
+      g.addEventListener("touchend", (event) => {
+        const touches = event.changedTouches;
+        for (let i = 0; i < touches.length; i++) {
+          const target = touchCache.get(touches[i].identifier);
+          if (target) {
+            noteOffByElement(target);
+          } else {
+            noteOff();
+          }
+        }
+      });
     } else {
       g.addEventListener("mouseenter", (event) => {
         if (mouseDowned) noteOn(event);
@@ -937,6 +990,14 @@ async function initPianoEvent(name) {
       g.addEventListener("mouseup", noteOff);
     }
   });
+  if (!("ontouchstart" in window)) {
+    document.addEventListener("mouseup", () => {
+      mouseDowned = false;
+    });
+    document.addEventListener("mousedown", () => {
+      mouseDowned = true;
+    });
+  }
 }
 
 async function initPlayer() {
@@ -1615,10 +1676,4 @@ document.getElementById("soundfonts").onchange = changeConfig;
 document.getElementById("instruments").onchange = changeInstrument;
 document.addEventListener("keydown", typeEvent);
 window.addEventListener("resize", resize);
-window.addEventListener("mouseup", () => {
-  mouseDowned = false;
-});
-window.addEventListener("mousedown", () => {
-  mouseDowned = true;
-});
 document.addEventListener("click", unlockAudio);
