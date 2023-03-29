@@ -172,15 +172,6 @@ function styleToViewBox(svg) {
   svg.removeAttribute("style");
 }
 
-function calcPixelsPerTimeStep() {
-  let averageTime = 0;
-  ns.notes.forEach((note) => {
-    averageTime += note.endTime - note.startTime;
-  });
-  averageTime /= ns.notes.length;
-  return noteWidth / averageTime;
-}
-
 function searchNotePosition(notes, time) {
   let left = 0;
   let right = notes.length - 1;
