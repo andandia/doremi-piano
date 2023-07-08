@@ -1,4 +1,4 @@
-var CACHE_NAME = "2023-06-24 10:16";
+var CACHE_NAME = "2023-07-08 16:20";
 var urlsToCache = [
   "/doremi-piano/",
   "/doremi-piano/index.js",
