@@ -510,7 +510,7 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
     const opacityBaseline = 0.2; // Shift all the opacities up a little.
     const opacity = note.velocity ? note.velocity / 100 + opacityBaseline : 1;
     // const rgb = (isActive) ? this.config.activeNoteRGB : this.config.noteRGB;
-    const rgb = (isActive) ? this.config.activeNoteRGB : getRectColor();
+    const rgb = isActive ? this.config.activeNoteRGB : getRectColor();
     const fill = `rgba(${rgb}, ${opacity})`;
     return fill;
   }
@@ -617,8 +617,7 @@ function beautifyPiano(svg) {
     svgString += beautifyPianoKey(rect);
   });
   svgString += "</svg>";
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svgString, "image/svg+xml");
+  const doc = new DOMParser().parseFromString(svgString, "image/svg+xml");
   svg.replaceChildren(...doc.documentElement.children);
 }
 
@@ -714,7 +713,7 @@ class MagentaPlayer extends core.SoundFontPlayer {
 
 class SoundFontPlayer {
   constructor(stopCallback) {
-    this.context = new AudioContext();
+    this.context = new globalThis.AudioContext();
     this.state = "stopped";
     this.noCallback = false;
     this.stopCallback = stopCallback;
@@ -943,63 +942,58 @@ async function initPianoEvent(name) {
       countKeyPressOn(pitch);
       rects[1].setAttribute("height", height * 0.975);
     }
-    if ("ontouchstart" in window) {
-      const touchCache = new Map();
-      g.addEventListener("touchmove", (event) => {
-        const touches = event.changedTouches;
-        for (let i = 0; i < touches.length; i++) {
-          const touch = touches[i];
-          const x = touch.clientX;
-          const y = touch.clientY;
-          const targetRect = document.elementsFromPoint(x, y)
-            .find((e) => e.tagName == "rect");
-          const prevTarget = touchCache.get(touch.identifier);
-          if (targetRect) {
-            const target = targetRect.parentNode;
-            if (prevTarget != target) {
-              touchCache.set(touch.identifier, target);
-              if (prevTarget) {
-                noteOffByElement(prevTarget);
-                target.dispatchEvent(new Event("touchstart"));
-              }
+    const touchCache = new Map();
+    g.addEventListener("touchmove", (event) => {
+      const touches = event.changedTouches;
+      for (let i = 0; i < touches.length; i++) {
+        const touch = touches[i];
+        const x = touch.clientX;
+        const y = touch.clientY;
+        const targetRect = document.elementsFromPoint(x, y)
+          .find((e) => e.tagName == "rect");
+        const prevTarget = touchCache.get(touch.identifier);
+        if (targetRect) {
+          const target = targetRect.parentNode;
+          if (prevTarget != target) {
+            touchCache.set(touch.identifier, target);
+            if (prevTarget) {
+              noteOffByElement(prevTarget);
+              target.dispatchEvent(new Event("touchstart"));
             }
-          } else if (prevTarget) {
-            touchCache.delete(touch.identifier);
-            noteOffByElement(prevTarget);
           }
+        } else if (prevTarget) {
+          touchCache.delete(touch.identifier);
+          noteOffByElement(prevTarget);
         }
-      });
-      g.addEventListener("touchstart", noteOn);
-      g.addEventListener("touchend", (event) => {
-        const touches = event.changedTouches;
-        for (let i = 0; i < touches.length; i++) {
-          const id = touches[i].identifier;
-          const target = touchCache.get(id);
-          if (target) {
-            noteOffByElement(target);
-            touchCache.delete(id);
-          } else {
-            noteOff();
-          }
+      }
+    });
+    g.addEventListener("touchstart", noteOn);
+    g.addEventListener("touchend", (event) => {
+      const touches = event.changedTouches;
+      for (let i = 0; i < touches.length; i++) {
+        const id = touches[i].identifier;
+        const target = touchCache.get(id);
+        if (target) {
+          noteOffByElement(target);
+          touchCache.delete(id);
+        } else {
+          noteOff();
         }
-      });
-    } else {
-      g.addEventListener("mouseenter", (event) => {
-        if (mouseDowned) noteOn(event);
-      });
-      g.addEventListener("mousedown", noteOn);
-      g.addEventListener("mouseleave", noteOff);
-      g.addEventListener("mouseup", noteOff);
-    }
+      }
+    });
+    g.addEventListener("mouseenter", (event) => {
+      if (mouseDowned) noteOn(event);
+    });
+    g.addEventListener("mousedown", noteOn);
+    g.addEventListener("mouseleave", noteOff);
+    g.addEventListener("mouseup", noteOff);
   });
-  if (!("ontouchstart" in window)) {
-    document.addEventListener("mouseup", () => {
-      mouseDowned = false;
-    });
-    document.addEventListener("mousedown", () => {
-      mouseDowned = true;
-    });
-  }
+  document.addEventListener("mouseup", () => {
+    mouseDowned = false;
+  });
+  document.addEventListener("mousedown", () => {
+    mouseDowned = true;
+  });
 }
 
 async function initPlayer() {
@@ -1145,7 +1139,7 @@ function play() {
       enableController();
       break;
   }
-  window.scrollTo({
+  globalThis.scrollTo({
     top: visualizer.svgPiano.getBoundingClientRect().top,
     behavior: "auto",
   });
@@ -1698,5 +1692,5 @@ document.getElementById("inputSoundFontUrl").onchange = loadSoundFontUrlEvent;
 document.getElementById("soundfonts").onchange = changeConfig;
 document.getElementById("instruments").onchange = changeInstrument;
 document.addEventListener("keydown", typeEvent);
-window.addEventListener("resize", resize);
+globalThis.addEventListener("resize", resize);
 document.addEventListener("click", unlockAudio);
