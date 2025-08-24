@@ -557,6 +557,7 @@ function getMinMaxPitch() {
   return [min, max];
 }
 
+const noteNames = ["ド", "ド#", "レ", "レ#", "ミ", "ファ", "ファ#", "ソ", "ソ#", "ラ", "ラ#", "シ"];
 function beautifyPianoKey(rect) {
   const className = rect.getAttribute("class");
   const x = parseInt(rect.getAttribute("x"));
@@ -564,7 +565,11 @@ function beautifyPianoKey(rect) {
   const width = parseInt(rect.getAttribute("width"));
   const height = parseInt(rect.getAttribute("height"));
   const pitch = rect.getAttribute("data-pitch");
+  const noteName = noteNames[pitch % 12];
+  const textX = x + width / 2;
   if (className == "white") {
+    const textY = height * 0.9;
+    const fontSize = width * 0.4;
     return `
 <g>
   <rect data-pitch="${pitch}"
@@ -577,8 +582,11 @@ function beautifyPianoKey(rect) {
     stroke="#666" stroke-width="1px" ry="3%" vector-effect="non-scaling-stroke"
     original-fill="${className}" class="${className}" fill="url(#${className})">
   </rect>
+  <text x="${textX}" y="${textY}" font-size="${fontSize}" text-anchor="middle" fill="#333" style="pointer-events:none;">${noteName}</text>
 </g>`;
   } else {
+    const textY = height * 0.8;
+    const fontSize = width * 0.3;
     return `
 <g>
   <rect data-pitch="${pitch}"
@@ -593,6 +601,7 @@ function beautifyPianoKey(rect) {
     stroke="#666" stroke-width="1px" ry="2%" vector-effect="non-scaling-stroke"
     original-fill="${className}" class="${className}" fill="url(#${className})">
   </rect>
+  <text x="${textX}" y="${textY}" font-size="${fontSize}" text-anchor="middle" fill="#ccc" style="pointer-events:none;">${noteName}</text>
 </g>`;
   }
 }
@@ -641,6 +650,14 @@ function initVisualizer() {
     noteRGB: "0, 127, 255",
   };
   visualizer = new WaterfallSVGVisualizer(nsCache, playPanel, config);
+  const accordion = document.getElementById('accordionSettings');
+  if (visualizer.svgPiano && accordion) {
+    accordion.after(visualizer.svgPiano);
+    const hr = document.querySelector('hr.m-0');
+    if (hr) {
+      visualizer.svgPiano.after(hr);
+    }
+  }
   initPianoKeyIndex();
   styleToViewBox(visualizer.svg);
   styleToViewBox(visualizer.svgPiano);

@@ -74,6 +74,9 @@
         --bs-btn-disabled-bg: var(--bs-gray-800);
         --bs-btn-disabled-border-color: var(--bs-gray-800);
       }
+      .accordion-button:not(.collapsed) {
+        box-shadow: none;
+      }
     </style>
     <script data-ad-client="ca-pub-6459713332128733" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
   </head>
@@ -100,85 +103,98 @@
       <noscript>
         <div class="alert alert-warning">Please turn on JavaScript.</div>
       </noscript>
-      <p>Tap piano keys! A waterfall piano style MIDI notes tap game.
-      It is suitable for classical music with few instruments.
-      </p>
-      <div id="controller" class="d-flex flex-wrap justify-content-between my-2">
-        <div class="d-flex">
-          <button title="speed down" id="speedDown" class="btn btn-sm btn-light" type="button">
-            <i class="bi bi-chevron-double-left"></i>
-          </button>
-          <input title="speed" id="speed" class="form-control form-control-sm d-inline w-auto text-center" type="number" min="0" step="10" value="100" placeholder="speed">
-          <button title="speed up" id="speedUp" class="btn btn-sm btn-light" type="button">
-            <i class="bi bi-chevron-double-right"></i>
-          </button>
-          <button title="repeat" id="repeat" class="btn btn-sm btn-light" type="button">
-            <i class="bi bi-repeat"></i>
-          </button>
-          <button title="volume ON/OFF" id="volumeOnOff" class="btn btn-sm btn-light" type="button">
-            <i class="bi bi-volume-up-fill"></i>
-          </button>
-          <div class="d-flex align-items-center">
-            <input type="range" id="volumebar" class="form-range" min="0" max="100" value="50" step="1">
-          </div>
-        </div>
-        <div class="d-flex flex-nowrap align-items-center">
-          <button title="play" id="play" class="btn btn-sm btn-light p-0" type="button"><i class="bi bi-play-fill"></i></button>
-          <button title="pause" id="pause" class="btn btn-sm btn-light p-0 d-none" type="button"><i class="bi bi-pause-fill"></i></button>
-          <div class="small p-2 text-nowrap notranslate">
-            <span id="currentTime">0:00</span>
-            <span class="px-1">/</span>
-            <span id="totalTime">0:00</span>
-          </div>
-          <input type="range" id="seekbar" class="form-range">
-        </div>
-      </div>
-      <div id="toolbar" class="row text-center">
-        <div class="col-sm">
-          <h6>Filter Programs</h6>
-          <form id="filterPrograms">
-            <div class="form-check form-check-inline">
-              <label class="form-check-label">
-                <input class="form-check-input" name="program" value="0" type="radio">
-                0
-              </label>
+      <div class="accordion mb-2" id="accordionSettings">
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSettings" aria-expanded="false" aria-controls="collapseSettings">
+              Settings
+            </button>
+          </h2>
+          <div id="collapseSettings" class="accordion-collapse collapse">
+            <div class="accordion-body">
+              <p>Tap piano keys! A waterfall piano style MIDI notes tap game.
+              It is suitable for classical music with few instruments.
+              </p>
+              <div id="controller" class="d-flex flex-wrap justify-content-between my-2">
+                <div class="d-flex">
+                  <button title="speed down" id="speedDown" class="btn btn-sm btn-light" type="button">
+                    <i class="bi bi-chevron-double-left"></i>
+                  </button>
+                  <input title="speed" id="speed" class="form-control form-control-sm d-inline w-auto text-center" type="number" min="0" step="10" value="100" placeholder="speed">
+                  <button title="speed up" id="speedUp" class="btn btn-sm btn-light" type="button">
+                    <i class="bi bi-chevron-double-right"></i>
+                  </button>
+                  <button title="repeat" id="repeat" class="btn btn-sm btn-light" type="button">
+                    <i class="bi bi-repeat"></i>
+                  </button>
+                  <button title="volume ON/OFF" id="volumeOnOff" class="btn btn-sm btn-light" type="button">
+                    <i class="bi bi-volume-up-fill"></i>
+                  </button>
+                  <div class="d-flex align-items-center">
+                    <input type="range" id="volumebar" class="form-range" min="0" max="100" value="50" step="1">
+                  </div>
+                </div>
+                <div class="d-flex flex-nowrap align-items-center">
+                  <button title="play" id="play" class="btn btn-sm btn-light p-0" type="button"><i class="bi bi-play-fill"></i></button>
+                  <button title="pause" id="pause" class="btn btn-sm btn-light p-0 d-none" type="button"><i class="bi bi-pause-fill"></i></button>
+                  <div class="small p-2 text-nowrap notranslate">
+                    <span id="currentTime">0:00</span>
+                    <span class="px-1">/</span>
+                    <span id="totalTime">0:00</span>
+                  </div>
+                  <input type="range" id="seekbar" class="form-range">
+                </div>
+              </div>
+              <div id="toolbar" class="row text-center">
+                <div class="col-sm">
+                  <h6>Filter Programs</h6>
+                  <form id="filterPrograms">
+                    <div class="form-check form-check-inline">
+                      <label class="form-check-label">
+                        <input class="form-check-input" name="program" value="0" type="radio">
+                        0
+                      </label>
+                    </div>
+                  </form>
+                </div>
+                <div class="col-sm">
+                  <h6>Filter Instruments</h6>
+                  <div id="filterInstruments">
+                    <div class="form-check form-check-inline">
+                      <label class="form-check-label">
+                        <input class="form-check-input" name="instrument" value="0" type="checkbox" checked>
+                        0
+                      </label>
+                    </div><div class="form-check form-check-inline">
+                      <label class="form-check-label">
+                        <input class="form-check-input" name="instrument" value="1" type="checkbox" checked>
+                        1
+                      </label>
+                    </div><div class="form-check form-check-inline">
+                      <label class="form-check-label">
+                        <input class="form-check-input" name="instrument" value="2" type="checkbox" checked>
+                        2
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="pt-3">
+                <div id="midiTitle" class="text-center"></div>
+                <div id="composer" class="text-end"></div>
+                <div class="text-end">
+                  <span id="maintainer"></span>
+                  <span id="license" class="ms-3"></span>
+                </div>
+              </div>
+            <div id="gamePanel">
+                <div id="playPanel"></div>
+              </div>
+              <hr class="m-0">
             </div>
-          </form>
-        </div>
-        <div class="col-sm">
-          <h6>Filter Instruments</h6>
-          <div id="filterInstruments">
-            <div class="form-check form-check-inline">
-              <label class="form-check-label">
-                <input class="form-check-input" name="instrument" value="0" type="checkbox" checked>
-                0
-              </label>
-            </div><div class="form-check form-check-inline">
-              <label class="form-check-label">
-                <input class="form-check-input" name="instrument" value="1" type="checkbox" checked>
-                1
-              </label>
-            </div><div class="form-check form-check-inline">
-              <label class="form-check-label">
-                <input class="form-check-input" name="instrument" value="2" type="checkbox" checked>
-                2
-              </label>
-            </div>
           </div>
         </div>
       </div>
-      <div class="pt-3">
-        <div id="midiTitle" class="text-center"></div>
-        <div id="composer" class="text-end"></div>
-        <div class="text-end">
-          <span id="maintainer"></span>
-          <span id="license" class="ms-3"></span>
-        </div>
-      </div>
-      <div id="gamePanel">
-        <div id="playPanel"></div>
-      </div>
-      <hr class="m-0">
       <div id="scorePanel" class="modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content">
