@@ -34,7 +34,7 @@ function getRectColor() {
 function setRectColor() {
   [...visualizer.svg.children].forEach((rect) => {
     const color = getRectColor();
-    rect.setAttribute("fill", `rgba(${color}, 1)`);
+    rect.setAttribute("fill", `rgba(${color}, 1)`)
   });
 }
 
@@ -247,8 +247,8 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
 
     // Add a little bit of padding to the right, so that the scrollbar
     // doesn't overlap the last note on the piano.
-    this.parentElement.style.width = `${
-      this.width + this.config.whiteNoteWidth
+    this.parentElement.style.width = `${ 
+      this.width + this.config.whiteNoteWidth 
     }px`;
     this.parentElement.scrollTop = this.parentElement.scrollHeight;
 
@@ -264,11 +264,11 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
     const height = Math.max(container.getBoundingClientRect().height, 200);
 
     // Height and padding-top must match for this to work.
-    this.parentElement.style.paddingTop = `${
-      height - this.config.whiteNoteHeight
+    this.parentElement.style.paddingTop = `${ 
+      height - this.config.whiteNoteHeight 
     }px`;
-    this.parentElement.style.height = `${
-      height - this.config.whiteNoteHeight
+    this.parentElement.style.height = `${ 
+      height - this.config.whiteNoteHeight 
     }px`;
 
     this.parentElement.style.boxSizing = "border-box";
@@ -595,8 +595,8 @@ function beautifyPianoKey(rect) {
     original-fill="${className}" class="${className}" fill="url(#${className})">
   </rect>
   <rect data-pitch="${pitch}"
-    x="${x + width * 0.05}" y="${y}" width="${width * 0.9}" height="${
-      height * 0.85
+    x="${x + width * 0.05}" y="${y}" width="${width * 0.9}" height="${ 
+      height * 0.85 
     }"
     stroke="#666" stroke-width="1px" ry="2%" vector-effect="non-scaling-stroke"
     original-fill="${className}" class="${className}" fill="url(#${className})">
@@ -652,10 +652,11 @@ function initVisualizer() {
   visualizer = new WaterfallSVGVisualizer(nsCache, playPanel, config);
   const accordion = document.getElementById('accordionSettings');
   if (visualizer.svgPiano && accordion) {
-    accordion.after(visualizer.svgPiano);
+    const pianoContainer = document.getElementById('piano-container');
+    pianoContainer.append(visualizer.svgPiano);
     const hr = document.querySelector('hr.m-0');
     if (hr) {
-      visualizer.svgPiano.after(hr);
+      pianoContainer.after(hr);
     }
   }
   initPianoKeyIndex();
@@ -675,6 +676,17 @@ function initVisualizer() {
   parentElement.style.paddingTop = "40vh";
   parentElement.style.overflowY = "hidden";
   resize();
+
+  const keyboardSlider = document.getElementById('keyboard-slider');
+  keyboardSlider.addEventListener('input', (event) => {
+    const sliderValue = event.target.value;
+    const svgWidth = visualizer.svg.viewBox.baseVal.width;
+    const pianoWidth = visualizer.svgPiano.viewBox.baseVal.width;
+    const maxScroll = pianoWidth - svgWidth;
+    const scrollValue = (sliderValue / 100) * maxScroll;
+    visualizer.svg.setAttribute('viewBox', `${scrollValue} 0 ${svgWidth} ${visualizer.svg.viewBox.baseVal.height}`);
+    visualizer.svgPiano.setAttribute('viewBox', `${scrollValue} 0 ${pianoWidth} ${visualizer.svgPiano.viewBox.baseVal.height}`);
+  });
 }
 
 class MagentaPlayer extends core.SoundFontPlayer {
