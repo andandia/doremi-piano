@@ -234,6 +234,14 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
 
     this.setupDOM(parentElement);
 
+    this.updateDimensions();
+
+    this.clear();
+    this.drawPiano();
+    this.draw();
+  }
+
+  updateDimensions() {
     const size = this.getSize();
     this.width = size.width;
     this.height = size.height;
@@ -251,10 +259,6 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
       this.width + this.config.whiteNoteWidth 
     }px`;
     this.parentElement.scrollTop = this.parentElement.scrollHeight;
-
-    this.clear();
-    this.drawPiano();
-    this.draw();
   }
 
   setupDOM(container) {
@@ -648,6 +652,7 @@ function initVisualizer() {
     maxPitch: maxPitch,
     minPitch: minPitch,
     noteRGB: "0, 127, 255",
+    pixelsPerTimeStep: 100,
   };
   visualizer = new WaterfallSVGVisualizer(nsCache, playPanel, config);
   const accordion = document.getElementById('accordionSettings');
@@ -694,6 +699,46 @@ function initVisualizer() {
         initPianoKeyIndex();
         attachPianoKeyEvents();
     }
+  });
+
+  document.getElementById('zoom-in').addEventListener('click', () => {
+    visualizer.config.pixelsPerTimeStep += 10;
+    visualizer.updateDimensions();
+    styleToViewBox(visualizer.svg);
+    visualizer.draw();
+  });
+
+  document.getElementById('zoom-out').addEventListener('click', () => {
+    visualizer.config.pixelsPerTimeStep -= 10;
+    visualizer.updateDimensions();
+    styleToViewBox(visualizer.svg);
+    visualizer.draw();
+  });
+
+  document.getElementById('v-zoom-in').addEventListener('click', () => {
+    visualizer.config.whiteNoteWidth -= 2;
+    visualizer.config.blackNoteWidth = visualizer.config.whiteNoteWidth * 2 / 3;
+    visualizer.updateDimensions();
+    styleToViewBox(visualizer.svg);
+    styleToViewBox(visualizer.svgPiano);
+    visualizer.svgPiano.innerHTML = '';
+    visualizer.drawPiano();
+    beautifyPiano(visualizer.svgPiano);
+    initPianoKeyIndex();
+    attachPianoKeyEvents();
+  });
+
+  document.getElementById('v-zoom-out').addEventListener('click', () => {
+    visualizer.config.whiteNoteWidth += 2;
+    visualizer.config.blackNoteWidth = visualizer.config.whiteNoteWidth * 2 / 3;
+    visualizer.updateDimensions();
+    styleToViewBox(visualizer.svg);
+    styleToViewBox(visualizer.svgPiano);
+    visualizer.svgPiano.innerHTML = '';
+    visualizer.drawPiano();
+    beautifyPiano(visualizer.svgPiano);
+    initPianoKeyIndex();
+    attachPianoKeyEvents();
   });
 }
 
