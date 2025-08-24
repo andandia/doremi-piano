@@ -665,7 +665,7 @@ function initVisualizer() {
 
   const whiteCount = [...visualizer.svgPiano.children]
     .filter((rect) => rect.getAttribute("class") == "white").length;
-  playPanel.style.width = whiteCount / 14 * 100 + "%";
+  playPanel.style.width = "100%";
   beautifyPiano(visualizer.svgPiano);
   visualizer.svgPiano.style.touchAction = "none";
 
