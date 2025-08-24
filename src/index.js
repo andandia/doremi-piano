@@ -680,12 +680,20 @@ function initVisualizer() {
   const keyboardSlider = document.getElementById('keyboard-slider');
   keyboardSlider.addEventListener('input', (event) => {
     const sliderValue = event.target.value;
-    const svgWidth = visualizer.svg.viewBox.baseVal.width;
-    const pianoWidth = visualizer.svgPiano.viewBox.baseVal.width;
-    const maxScroll = pianoWidth - svgWidth;
-    const scrollValue = (sliderValue / 100) * maxScroll;
-    visualizer.svg.setAttribute('viewBox', `${scrollValue} 0 ${svgWidth} ${visualizer.svg.viewBox.baseVal.height}`);
-    visualizer.svgPiano.setAttribute('viewBox', `${scrollValue} 0 ${pianoWidth} ${visualizer.svgPiano.viewBox.baseVal.height}`);
+    const newFirstOctave = Math.round(sliderValue / 100 * 5);
+    if (visualizer.firstDrawnOctave !== newFirstOctave) {
+        const octavesToShow = visualizer.lastDrawnOctave - visualizer.firstDrawnOctave;
+        visualizer.firstDrawnOctave = newFirstOctave;
+        visualizer.lastDrawnOctave = newFirstOctave + octavesToShow;
+        if (visualizer.lastDrawnOctave > 8) {
+            visualizer.lastDrawnOctave = 8;
+        }
+        visualizer.svgPiano.innerHTML = '';
+        visualizer.drawPiano();
+        beautifyPiano(visualizer.svgPiano);
+        initPianoKeyIndex();
+        attachPianoKeyEvents();
+    }
   });
 }
 
@@ -937,10 +945,7 @@ function noteOffByElement(g) {
   }
 }
 
-async function initPianoEvent(name) {
-  synthesizer = new SoundFontPlayer(stopCallback);
-  await loadSoundFont(synthesizer, name);
-  initSynthesizerProgram();
+function attachPianoKeyEvents() {
   const gs = [...visualizer.svgPiano.children];
   gs.forEach((g) => {
     const rects = g.children;
@@ -1023,6 +1028,13 @@ async function initPianoEvent(name) {
   document.addEventListener("mousedown", () => {
     mouseDowned = true;
   });
+}
+
+async function initPianoEvent(name) {
+  synthesizer = new SoundFontPlayer(stopCallback);
+  await loadSoundFont(synthesizer, name);
+  initSynthesizerProgram();
+  attachPianoKeyEvents();
 }
 
 async function initPlayer() {
