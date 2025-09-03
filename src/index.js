@@ -276,7 +276,7 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
     }px`;
 
     this.parentElement.style.boxSizing = "border-box";
-    this.parentElement.style.overflowX = "hidden";
+    this.parentElement.style.overflowX = "auto";
     this.parentElement.style.overflowY = "auto";
 
     this.svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -644,7 +644,7 @@ function initVisualizer() {
   const whiteNoteHeight = Math.round(whiteNoteWidth * 70 / 20);
   const blackNoteHeight = Math.round(whiteNoteHeight * 2 / 3);
   const config = {
-    showOnlyOctavesUsed: true,
+    showOnlyOctavesUsed: false,
     whiteNoteWidth: whiteNoteWidth,
     whiteNoteHeight: whiteNoteHeight,
     blackNoteWidth: Math.round(whiteNoteWidth * 2 / 3),
@@ -658,7 +658,11 @@ function initVisualizer() {
   const accordion = document.getElementById('accordionSettings');
   if (visualizer.svgPiano && accordion) {
     const pianoContainer = document.getElementById('piano-container');
-    pianoContainer.append(visualizer.svgPiano);
+    const pianoWrapper = document.createElement('div');
+    pianoWrapper.style.overflowX = 'auto';
+    pianoWrapper.style.width = `${visualizer.width}px`;
+    pianoWrapper.append(visualizer.svgPiano);
+    pianoContainer.append(pianoWrapper);
     const hr = document.querySelector('hr.m-0');
     if (hr) {
       pianoContainer.after(hr);
