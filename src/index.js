@@ -1,9 +1,11 @@
+// 設定を読み込む関数
 function loadConfig() {
   if (localStorage.getItem("darkMode") == 1) {
     document.documentElement.setAttribute("data-bs-theme", "dark");
   }
 }
 
+// ダークモードを切り替える関数
 function toggleDarkMode() {
   if (localStorage.getItem("darkMode") == 1) {
     localStorage.setItem("darkMode", 0);
@@ -14,12 +16,14 @@ function toggleDarkMode() {
   }
 }
 
+// ランダムな整数を生成する関数
 function getRandomInt(min, max) {
   min = Math.ceil(min);
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min)) + min;
 }
 
+// 長方形の色を取得する関数
 function getRectColor() {
   if (colorful) {
     const r = getRandomInt(0, 127);
@@ -31,6 +35,7 @@ function getRectColor() {
   }
 }
 
+// 長方形の色を設定する関数
 function setRectColor() {
   [...visualizer.svg.children].forEach((rect) => {
     const color = getRectColor();
@@ -38,11 +43,13 @@ function setRectColor() {
   });
 }
 
+// 長方形の色を切り替える関数
 function toggleRectColor() {
   colorful = !colorful;
   setRectColor();
 }
 
+// ファイルをドロップしたときのイベントハンドラー
 function dropFileEvent(event) {
   event.preventDefault();
   const file = event.dataTransfer.files[0];
@@ -53,30 +60,36 @@ function dropFileEvent(event) {
   loadMIDIFromBlob(file);
 }
 
+// MIDIファイルをロードするイベントハンドラー
 function loadMIDIFileEvent(event) {
   loadMIDIFromBlob(event.target.files[0]);
 }
 
+// MIDI URLをロードするイベントハンドラー
 function loadMIDIUrlEvent(event) {
   loadMIDIFromUrl(event.target.value);
 }
 
+// URLパラメータからMIDIをロードする関数
 async function loadMIDIFromUrlParams() {
   const query = new URLSearchParams(location.search);
   ns = await core.urlToNoteSequence(query.get("url"));
   convert(ns, query);
 }
 
+// BLOBからMIDIをロードする関数
 async function loadMIDIFromBlob(file, query) {
   ns = await core.blobToNoteSequence(file);
   convert(ns, query);
 }
 
+// URLからMIDIをロードする関数
 async function loadMIDIFromUrl(midiUrl, query) {
   ns = await core.urlToNoteSequence(midiUrl);
   convert(ns, query);
 }
 
+// MIDI情報を設定する関数
 function setMIDIInfo(query) {
   if (query instanceof URLSearchParams) {
     const title = query.get("title");
@@ -109,12 +122,14 @@ function setMIDIInfo(query) {
   }
 }
 
+// GMを変換する関数
 function convertGM(ns) {
   ns.controlChanges = ns.controlChanges.filter((n) =>
     n.controlNumber == 0 || n.controlNumber == 32
   );
 }
 
+// ノートシーケンスを変換する関数
 function convert(ns, query) {
   convertGM(ns);
 
@@ -241,22 +256,22 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
     this.draw();
   }
 
+  // 次元を更新するメソッド
   updateDimensions() {
     const size = this.getSize();
     this.width = size.width;
     this.height = size.height;
 
-    // Make sure that if we've used this svg element before, it's now emptied.
+    // SVG要素が以前使用されていた場合、空にする
     this.svg.style.width = `${this.width}px`;
     this.svg.style.height = `${this.height}px`;
 
     this.svgPiano.style.width = `${this.width}px`;
     this.svgPiano.style.height = `${this.config.whiteNoteHeight}px`;
 
-    // Add a little bit of padding to the right, so that the scrollbar
-    // doesn't overlap the last note on the piano.
-    this.parentElement.style.width = `${ 
-      this.width + this.config.whiteNoteWidth 
+    // 右側に少しパディングを追加して、スクロールバーがピアノの最後のノートに重ならないようにする
+    this.parentElement.style.width = `${
+      this.width + this.config.whiteNoteWidth
     }px`;
     this.parentElement.scrollTop = this.parentElement.scrollHeight;
   }
